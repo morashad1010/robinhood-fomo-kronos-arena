@@ -1,0 +1,143 @@
+version: '3.8'
+
+services:
+  fomo-client:
+    build:
+      context: ./services/fomo-client
+      dockerfile: Dockerfile
+    container_name: fomo-client
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=production
+      - FOMO_API_KEY=${FOMO_API_KEY}
+      - TELEGRAM_BOT_TOKEN=${TELEGRAM_BOT_TOKEN}
+    volumes:
+      - ./services/fomo-client:/app
+      - fomo_client_data:/app/data
+    restart: unless-stopped
+    networks:
+      - trading-network
+
+  mirofish-backend:
+    build:
+      context: ./services/mirofish-backend
+      dockerfile: Dockerfile
+    container_name: mirofish-backend
+    ports:
+      - "4000:4000"
+    environment:
+      - NODE_ENV=production
+      - DATABASE_URL=${DATABASE_URL}
+      - REDIS_URL=${REDIS_URL}
+      - MIROFISH_SECRET=${MIROFISH_SECRET}
+    volumes:
+      - ./services/mirofish-backend:/app
+      - mirofish_data:/app/data
+    restart: unless-stopped
+    networks:
+      - trading-network
+    depends_on:
+      - redis
+      - postgres
+
+  kronos:
+    build:
+      context: ./services/kronos
+      dockerfile: Dockerfile
+    container_name: kronos
+    ports:
+      - "5000:5000"
+    environment:
+      - PYTHONUNBUFFERED=1
+      - KRONOS_API_KEY=${KRONOS_API_KEY}
+      - STRATEGY_CONFIG=${STRATEGY_CONFIG}
+    volumes:
+      - ./services/kronos:/app
+      - kronos_data:/app/data
+    restart: unless-stopped
+    networks:
+      - trading-network
+
+  agent-arena:
+    build:
+      context: ./services/agent-arena
+      dockerfile: Dockerfile
+    container_name: agent-arena
+    ports:
+      - "6000:6000"
+    environment:
+      - ARENA_MODE=production
+      - OLLAMA_HOST=${OLLAMA_HOST:-http://host.docker.internal:11434}
+      - ARENA_SECRET=${ARENA_SECRET}
+    volumes:
+      - ./services/agent-arena:/app
+      - arena_data:/app/data
+    restart: unless-stopped
+    networks:
+      - trading-network
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+
+  robinhood-executor:
+    build:
+      context: ./services/robinhood-executor
+      dockerfile: Dockerfile
+    container_name: robinhood-executor
+    ports:
+      - "7000:7000"
+    environment:
+      - ROBINHOOD_API_KEY=${ROBINHOOD_API_KEY}
+      - ROBINHOOD_SECRET=${ROBINHOOD_SECRET}
+      - ROBINHOOD_CHAIN_ID=${ROBINHOOD_CHAIN_ID}
+      - PRIVATE_KEY=${PRIVATE_KEY}
+    volumes:
+      - ./services/robinhood-executor:/app
+      - robinhood_data:/app/data
+    restart: unless-stopped
+    networks:
+      - trading-network
+
+  redis:
+    image: redis:7-alpine
+    container_name: trading-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - trading-network
+    restart: unless-stopped
+
+  postgres:
+    image: postgres:15-alpine
+    container_name: trading-postgres
+    ports:
+      - "5432:5432"
+    environment:
+      - POSTGRES_USER=${POSTGRES_USER:-trading}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-trading_secret}
+      - POSTGRES_DB=${POSTGRES_DB:-trading_db}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - trading-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U trading"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  fomo_client_data:
+  mirofish_data:
+  kronos_data:
+  arena_data:
+  robinhood_data:
+  redis_data:
+  postgres_data:
+
+networks:
+  trading-network:
+    driver: bridge

@@ -1,0 +1,50 @@
+{
+  "system": {
+    "name": "Robinhood FOMO Kronos Arena",
+    "version": "1.0.0",
+    "environment": "production"
+  },
+  "services": {
+    "fomo-client": {
+      "port": 3000,
+      "enabled": true,
+      "healthCheck": "/health"
+    },
+    "mirofish-backend": {
+      "port": 4000,
+      "enabled": true,
+      "healthCheck": "/api/health"
+    },
+    "kronos": {
+      "port": 5000,
+      "enabled": true,
+      "healthCheck": "/status"
+    },
+    "agent-arena": {
+      "port": 6000,
+      "enabled": true,
+      "healthCheck": "/arena/health"
+    },
+    "robinhood-executor": {
+      "port": 7000,
+      "enabled": true,
+      "healthCheck": "/executor/ping"
+    }
+  },
+  "database": {
+    "postgres": {
+      "host": "postgres",
+      "port": 5432,
+      "user": "trading",
+      "database": "trading_db"
+    },
+    "redis": {
+      "host": "redis",
+      "port": 6379
+    }
+  },
+  "network": {
+    "name": "trading-network",
+    "driver": "bridge"
+  }
+}

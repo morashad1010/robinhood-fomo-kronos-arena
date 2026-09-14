@@ -1,0 +1,36 @@
+# Environment variables
+.env
+.env.local
+.env.*.local
+
+# Docker
+*.log
+*.pid
+*.seed
+*.pid.lock
+
+# Data directories
+*/data/*
+!*/data/.gitkeep
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Temporary files
+tmp/
+temp/
+*.tmp
+
+# Secrets
+*.key
+*.pem
+*.crt
+private_keys/
